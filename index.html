@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum-Resistant Password Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label, input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quantum-Resistant Password Generator</h1>
+
+    <form id="generate-form">
+        <label for="user_data">User Data:</label>
+        <input type="text" id="user_data" name="user_data" placeholder="Enter user-specific data">
+        <button type="submit">Generate Password</button>
+    </form>
+
+    <h2>Generated Password:</h2>
+    <p id="generated-password"></p>
+
+    <form id="save-form">
+        <label for="site">Site:</label>
+        <input type="text" id="site" name="site" placeholder="Enter site name">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" placeholder="Enter username">
+        <input type="hidden" id="password" name="password">
+        <button type="submit">Save Password</button>
+    </form>
+
+    <h2>Saved Credentials:</h2>
+    <ul id="credentials-list"></ul>
+
+    <script>
+        document.getElementById('generate-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const userData = document.getElementById('user_data').value;
+
+            fetch('http://127.0.0.1:5000/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_data: userData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('generated-password').innerText = data.password;
+                document.getElementById('password').value = data.password;
+            });
+        });
+
+        document.getElementById('save-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const site = document.getElementById('site').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            fetch('http://127.0.0.1:5000/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ site: site, username: username, password: password })
+            })
+            .then(response => response.json())
+            .then(() => {
+                loadCredentials();
+            });
+        });
+
+        function loadCredentials() {
+            fetch('http://127.0.0.1:5000/retrieve')
+            .then(response => response.json())
+            .then(data => {
+                const credentialsList = document.getElementById('credentials-list');
+                credentialsList.innerHTML = '';
+                data.credentials.forEach(cred => {
+                    const li = document.createElement('li');
+                    li.textContent = `Site: ${cred.site}, Username: ${cred.username}, Password: ${cred.password}`;
+                    credentialsList.appendChild(li);
+                });
+            });
+        }
+
+        loadCredentials();
+    </script>
+</body>
+</html>
